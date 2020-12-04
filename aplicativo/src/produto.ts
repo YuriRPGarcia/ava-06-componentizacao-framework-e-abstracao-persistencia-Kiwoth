@@ -1,17 +1,11 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { Command } from './Command'
-import { Database } from 'sqlite3'
+import { Commands } from "./commands";
+import { DataE } from "./DataE";
 
-const db = new Database('./banco.db')
-
-// GET /produtos
-class TodosProdutosCommand implements Command {
-  execute(req: IncomingMessage, resp: ServerResponse): void {
-    db.all('SELECT * FROM produtos', (erro, registros) => {
-      resp.writeHead(200, {'Content-Type': 'application/json'})
-      resp.end(JSON.stringify(registros))
-    })
-  }
+class Produto implements DataE {
+  tableName: string = "produtos";
+  name: string = "produto";
+  primaryKeyColumn: string = "id";
+  commands: Commands = new Commands(this);
 }
 
-export const todosUsuariosCommand = new TodosProdutosCommand()
+export const produto: Produto = new Produto();
