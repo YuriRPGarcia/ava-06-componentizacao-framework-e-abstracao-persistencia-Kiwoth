@@ -6,10 +6,20 @@ import { sqliteDatabase } from "./SQLiteDatabase";
 
 type modCommand = Command & { dataElement: DataE };
 
+type BodyParseCallBack = (body: any) => void
+
 export class Commands {
   private readonly _dataElement: DataE;
+  private handleBody(req: IncomingMessage, onEnd: BodyParseCallBack): void {
+    let corpo: string = ''
+    req.on("data", (parte: string) => (corpo += parte));
+    req.on("end", () => onEnd(JSON.parse(corpo)))
+  }
+
   constructor(dataElement: DataE) {
     this._dataElement = dataElement;
+
+    const self = this
 
     this.getAll = {
       dataElement: this._dataElement,
@@ -57,11 +67,9 @@ export class Commands {
       dataElement: this._dataElement,
       execute(req: IncomingMessage, resp: ServerResponse): void {
         if (dataElement) {
-          let corpo = "";
-          req.on("data", (parte) => (corpo += parte));
-          req.on("end", () => {
+          self.handleBody(req, corpo => {
             try {
-              const inserts = JSON.parse(corpo).novo;
+              const inserts = corpo.novo;
               sqliteDatabase
                 .insert(dataElement.tableName, ...inserts)
                 .then((value) => {
@@ -78,7 +86,7 @@ export class Commands {
               resp.writeHead(500, { "Content-Type": "text/plain" });
               resp.end(error.message);
             }
-          });
+          })
         }
       },
     };
@@ -87,13 +95,10 @@ export class Commands {
       dataElement: this._dataElement,
       execute(req: IncomingMessage, resp: ServerResponse): void {
         if (dataElement) {
-          let corpo = "";
-          req.on("data", (parte) => (corpo += parte));
-          req.on("end", () => {
+          self.handleBody(req, corpo => {
             try {
-              const bodyJSON = JSON.parse(corpo);
-              const updates = bodyJSON.update;
-              const conditions = bodyJSON.condicao;
+              const updates = corpo.update;
+              const conditions = corpo.condicao;
               sqliteDatabase
                 .update(dataElement.tableName, updates, conditions)
                 .then((value) => {
@@ -110,7 +115,7 @@ export class Commands {
               resp.writeHead(500, { "Content-Type": "text/plain" });
               resp.end(error.message);
             }
-          });
+          })
         }
       },
     };
@@ -119,12 +124,9 @@ export class Commands {
       dataElement: this._dataElement,
       execute(req: IncomingMessage, resp: ServerResponse): void {
         if (dataElement) {
-          let corpo = "";
-          req.on("data", (parte) => (corpo += parte));
-          req.on("end", () => {
+          self.handleBody(req, corpo => {
             try {
-              const bodyJSON = JSON.parse(corpo);
-              const conditions = bodyJSON.condicao;
+              const conditions = corpo.condicao;
               sqliteDatabase
                 .delete(dataElement.tableName, conditions)
                 .then((value) => {
@@ -141,7 +143,7 @@ export class Commands {
               resp.writeHead(500, { "Content-Type": "text/plain" });
               resp.end(error.message);
             }
-          });
+          })
         }
       },
     };
